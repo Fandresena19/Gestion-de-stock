@@ -35,6 +35,15 @@
   font-weight: 500;
   font-family: Maiandra GD !important;
 }
+@media (max-width: 1240px){
+  .sidebar .logo-details .logo_name{
+    display: none;
+  }
+
+  .sidebar .nav-links li a .links_name{
+    display: none;
+  }
+}
 .sidebar .nav-links {
   margin-top: 10px;
 }
@@ -817,4 +826,10 @@ html, body {
   margin: 10px;
   padding: 5px;
   border-radius: 5px;
+}
+
+@media (max-width: 450px){
+  .autre_nav ul li a span{
+    display: none;
+  }
 }
