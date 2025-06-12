@@ -11,6 +11,7 @@ include_once("../auth.php");
 <head>
   <meta charset="UTF-8" />
   <title>Gestion Immobilisation</title>
+  <link rel="icon" type="image/png" href="../icone/Logo.png">
   <!-- <link rel="stylesheet" href="../Css/style.css" /> -->
   <!-- Boxicons CDN Link -->
   <link href="../bootstrap4/boxicons-2.1.4/css/boxicons.min.css" rel="stylesheet" />
