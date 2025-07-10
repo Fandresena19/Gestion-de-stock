@@ -18,8 +18,6 @@ if (isset($_GET['id']) && !empty($_GET['id'])) {
 
         // Execute the deletion
         if ($stmt->execute()) {
-            // Update stock quantities
-            updateStockQuantitiesImmo();
             
             // Set success message
             $_SESSION['message'] = [

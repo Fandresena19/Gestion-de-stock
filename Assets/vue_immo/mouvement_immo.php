@@ -36,9 +36,7 @@ $date_fin = isset($_GET['date_fin']) ? $_GET['date_fin'] : date('Y-m-t'); // Der
             <th>Date</th>
             <th>Type</th>
             <th>Immobilisation</th>
-            <th>Quantité</th>
             <th>Prix unitaire</th>
-            <th>Valeur</th>
             <th>Fournisseur/Raison</th>
           </tr>
         </thead>
@@ -51,8 +49,8 @@ $date_fin = isset($_GET['date_fin']) ? $_GET['date_fin'] : date('Y-m-t'); // Der
 
             // Récupérer les achats d'immobilisations
             $sql_achats_immo = "SELECT ai.date_achat_immo AS date, 'Entrée' AS type, 
-                                   immo.nom_immo AS article, ai.quantite_achete_immo AS quantite, 
-                                   ai.prix_unitaire_immo AS prix_unitaire, ai.valeur_achat_immo AS valeur, 
+                                   immo.nom_immo AS article, 
+                                   ai.prix_unitaire_immo AS prix_unitaire,
                                    f.nom_fournisseur AS details
                             FROM achat_immo ai
                             JOIN immobilisation immo ON ai.id_immo = immo.id_immo
@@ -68,11 +66,10 @@ $date_fin = isset($_GET['date_fin']) ? $_GET['date_fin'] : date('Y-m-t'); // Der
 
             // Récupérer les sorties d'immobilisations
             $sql_sorties_immo = "SELECT si.date_sortie_immo AS date, 'Sortie' AS type, 
-                                    immo.nom_immo AS article, si.quantite_sortie_immo AS quantite,
-                                    si.prix_unitaire_immo AS prix_unitaire, si.valeur_sortie_immo AS valeur,
-                                    si.raison_sortie_immo AS details
+                                    si.prix_unitaire_immo AS prix_unitaire,
+                                    si.raison_sortie_immo AS details,
+                                    si.nom_immo AS article
                             FROM sortie_immo si
-                            JOIN immobilisation immo ON si.id_immo = immo.id_immo
                             WHERE si.date_sortie_immo BETWEEN :date_debut AND :date_fin";
 
             $req_sorties_immo = $bdd->prepare($sql_sorties_immo);
@@ -100,15 +97,12 @@ $date_fin = isset($_GET['date_fin']) ? $_GET['date_fin'] : date('Y-m-t'); // Der
           if (!empty($mouvements)) {
             foreach ($mouvements as $mouvement) {
               $color_class = $mouvement['type'] == 'Entrée' ? 'text-success' : 'text-danger';
-              $quantite_affichage = $mouvement['type'] == 'Entrée' ? '+' . $mouvement['quantite'] : '-' . $mouvement['quantite'];
           ?>
               <tr>
                 <td data-label="Date"><?= date('d/m/Y', strtotime($mouvement['date'])) ?></td>
                 <td class="<?= $color_class ?>" data-label="Type"><?= htmlspecialchars($mouvement['type']) ?></td>
                 <td><?= htmlspecialchars($mouvement['article']) ?></td>
-                <td class="<?= $color_class ?>" data-label="Quantité"><?= $quantite_affichage ?></td>
                 <td data-label="Prix"><?= $mouvement['prix_unitaire'] ?> MGA</td>
-                <td data-label="Montant"><?= $mouvement['valeur'] ?> MGA</td>
                 <td data-label="Detail"><?= htmlspecialchars($mouvement['details']) ?></td>
               </tr>
             <?php

@@ -5,7 +5,7 @@ include('head.php');
 $sql_immo = "SELECT i.*, c.nom_categorie_immo
             FROM immobilisation i
             LEFT JOIN categorie_immo c ON i.id_categorie_immo = c.id_categorie_immo
-            ORDER BY i.quantite_en_stock_immo DESC
+            ORDER BY i.debut_service DESC
             LIMIT 4";
 
 $stmt_immo = $bdd->prepare($sql_immo);
@@ -23,7 +23,7 @@ $stmt_sorties->execute();
 $sorties = $stmt_sorties->fetchAll(PDO::FETCH_ASSOC);
 
 //Recuperation des achats récents
-$sql_achats = "SELECT a.*, i.nom_immo, f.nom_fournisseur
+$sql_achats = "SELECT a.*, i.nom_immo, f.nom_fournisseur, i.type_immo
                FROM achat_immo a
                JOIN immobilisation i ON a.id_immo = i.id_immo
                JOIN fournisseur f ON a.id_fournisseur = f.id_fournisseur
@@ -40,10 +40,10 @@ $stmt_achats->execute();
       <div class="card">
         <div class="card-info">
           <div class="card-title"><?= htmlspecialchars($immo['nom_immo'])?></div>
-          <div class="card-value"><?= htmlspecialchars($immo['quantite_en_stock_immo'])?></div>
+          <div class="card-value"></div>
           <div class="card-badge">
             <i class="bx bx-package"></i>
-            <span class="badge-text"><?= htmlspecialchars($immo['nom_categorie_immo'])?></span>
+            <span class="badge-text"><?= htmlspecialchars($immo['type_immo'])?></span>
           </div>
         </div>
         <i class="bx bx-box inventory-icon"></i>
@@ -75,7 +75,7 @@ $stmt_achats->execute();
         <ul class="data-column">
           <li class="column-header">Quantité</li>
           <?php foreach ($sorties as $sortie): ?>
-            <li><a href="#"><?= htmlspecialchars($sortie['quantite_sortie_immo']) ?></a></li>
+            <li><a href="#">Immobilisation vendue</a></li>
           <?php endforeach; ?>
         </ul>
 
@@ -102,7 +102,7 @@ $stmt_achats->execute();
               <span class="item-name"><?= htmlspecialchars($achat['nom_immo']) ?></span>
             </a>
             <span class="item-quantity">
-              <?= number_format($achat['quantite_achete_immo'])?> unités
+              <?= htmlspecialchars($achat['type_immo'])?>
             </span>
           </li>
           <?php endwhile; ?>

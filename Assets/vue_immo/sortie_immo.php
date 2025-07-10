@@ -22,11 +22,13 @@ $immobilisations = getImmobilisation();
         <input type="hidden" name="id_sortie_immo" value="<?= !empty($current_sortie_immo['id_sortie_immo']) ? $current_sortie_immo['id_sortie_immo'] : '' ?>">
 
         <label for="immobilisation">Nom de l'immobilisation</label>
-        <select name="immobilisation" id="immobilisation" required>
+        <select name="immobilisation" id="immobilisation" required onchange="updateImmoDetails()">
+          <option value="">-- Sélectionner une immobilisation --</option>
           <?php
           // If editing, show the current immobilisation as selected first
           if (!empty($current_sortie_immo['id_immo'])) {
-            echo '<option value="' . $current_sortie_immo['id_immo'] . '" selected>' .
+            echo '<option value="' . $current_sortie_immo['id_immo'] . '" selected data-nom="' . 
+              htmlspecialchars($current_sortie_immo['nom_immo']) . '">' .
               htmlspecialchars($current_sortie_immo['nom_immo']) . '</option>';
           }
 
@@ -34,53 +36,58 @@ $immobilisations = getImmobilisation();
           foreach ($immobilisations as $immobilisation) {
             // Skip the current immobilisation to avoid duplicate
             if (empty($current_sortie_immo) || $immobilisation['id_immo'] != $current_sortie_immo['id_immo']) {
-              echo '<option value="' . $immobilisation['id_immo'] . '">' .
+              echo '<option value="' . $immobilisation['id_immo'] . '" data-nom="' . 
+                htmlspecialchars($immobilisation['nom_immo']) . '">' .
                 htmlspecialchars($immobilisation['nom_immo']) . '</option>';
             }
           }
           ?>
         </select>
 
-        <label for="quantite_sortie_immo">Quantité sortie</label>
-        <input type="number"
-          name="quantite_sortie_immo"
-          id="quantite_sortie_immo"
-          placeholder="Quantité sortie"
-          value="<?= !empty($current_sortie_immo['quantite_sortie_immo']) ? $current_sortie_immo['quantite_sortie_immo'] : '' ?>" />
+        <!-- Hidden input to store the nom_immo -->
+        <input type="hidden" name="nom_immo" id="nom_immo" value="<?= !empty($current_sortie_immo['nom_immo']) ? htmlspecialchars($current_sortie_immo['nom_immo']) : '' ?>">
 
-        <label for="prix_unitaire_immo">Prix unitaire (moyenne des prix d'acquisition)</label>
-        <input type="number"
-          name="prix_unitaire_immo"
-          id="prix_unitaire_immo"
-          placeholder="Prix unitaire"
-          readonly
-          value="<?= !empty($current_sortie_immo['prix_unitaire_immo']) ? $current_sortie_immo['prix_unitaire_immo'] : '' ?>" />
-
-        <label for="valeur_sortie_immo">Valeur sortie</label>
-        <input type="text"
-          name="valeur_sortie_immo"
-          id="valeur_sortie_immo"
-          placeholder="Valeur totale"
-          readonly
-          value="<?= !empty($current_sortie_immo['valeur_sortie_immo']) ? $current_sortie_immo['valeur_sortie_immo'] : '' ?>" />
+        <label for="prix_unitaire_immo">Prix unitaire</label>
+        <input type="number" 
+               step="0.01"
+               name="prix_unitaire_immo"
+               id="prix_unitaire_immo"
+               placeholder="Prix en MGA"
+               value="<?= !empty($current_sortie_immo['prix_unitaire_immo']) ? $current_sortie_immo['prix_unitaire_immo'] : '' ?>"
+               required />
 
         <label for="raison_sortie_immo">Raison sortie</label>
         <input type="text"
-          name="raison_sortie_immo"
-          id="raison_sortie_immo"
-          placeholder="Raison précise de sortie"
-          value="<?= !empty($current_sortie_immo['raison_sortie_immo']) ? htmlspecialchars($current_sortie_immo['raison_sortie_immo']) : '' ?>" />
+               name="raison_sortie_immo"
+               id="raison_sortie_immo"
+               placeholder="Raison précise de sortie"
+               value="<?= !empty($current_sortie_immo['raison_sortie_immo']) ? htmlspecialchars($current_sortie_immo['raison_sortie_immo']) : '' ?>"
+               required />
 
         <label for="date_sortie_immo">Date sortie</label>
         <input type="date"
-          name="date_sortie_immo"
-          id="date_sortie_immo"
-          value="<?= !empty($current_sortie_immo['date_sortie_immo']) ? $current_sortie_immo['date_sortie_immo'] : '' ?>" />
+               name="date_sortie_immo"
+               id="date_sortie_immo"
+               value="<?= !empty($current_sortie_immo['date_sortie_immo']) ? $current_sortie_immo['date_sortie_immo'] : date('Y-m-d') ?>"
+               required />
+
+        <div class="form-group">
+          <input type="checkbox" 
+                 name="supprimer_immobilisation" 
+                 id="supprimer_immobilisation" 
+                 value="1"
+                 <?= !empty($current_sortie_immo) ? '' : 'checked' ?>>
+          <label for="supprimer_immobilisation">Supprimer définitivement l'immobilisation de l'inventaire</label>
+        </div>
 
         <br><br>
         <button type="submit" class="btn <?= !empty($current_sortie_immo) ? 'btn-primary' : 'btn-success' ?>">
           <?= !empty($current_sortie_immo) ? 'Modifier' : 'Ajouter' ?>
         </button>
+
+        <?php if (!empty($current_sortie_immo)): ?>
+          <a href="sortie_immo.php" class="btn btn-secondary">Annuler</a>
+        <?php endif; ?>
 
         <?php
         if (!empty($_SESSION['message']['text'])) {
@@ -97,18 +104,18 @@ $immobilisations = getImmobilisation();
     </div>
 
     <div class="box">
+      <h4>Liste des sorties d'immobilisations</h4>
       <table class="mtable">
         <thead>
           <tr>
             <th>Nom immobilisation</th>
-            <th>Quantité sortie</th>
             <th>Prix unitaire</th>
-            <th>Montant</th>
             <th>Date sortie</th>
             <th>Raison sortie</th>
             <th>Actions</th>
           </tr>
         </thead>
+        <tbody>
         <?php
         $sorties_immo = getSortieImmo();
 
@@ -117,83 +124,59 @@ $immobilisations = getImmobilisation();
         ?>
             <tr>
               <td><?= htmlspecialchars($value['nom_immo']) ?></td>
-              <td><?= $value['quantite_sortie_immo'] ?></td>
-              <td><?= $value['prix_unitaire_immo'] ?> MGA</td>
-              <td><?= $value['valeur_sortie_immo'] ?> MGA</td>
+              <td><?= number_format($value['prix_unitaire_immo'], 2, ',', ' ') ?> MGA</td>
               <td><?= date('d/m/Y', strtotime($value['date_sortie_immo'])) ?></td>
               <td><?= htmlspecialchars($value['raison_sortie_immo']) ?></td>
               <td>
                 <div class="action-buttons">
                   <a href="sortie_immo.php?id=<?= $value['id_sortie_immo'] ?>"
-                    class="edit-btn"
-                    title="Modifier">
+                     class="edit-btn"
+                     title="Modifier">
                     <i class='bx bx-edit'></i>
                   </a>
                   <a href="../traitement_immo/supprimer_sortie_immo.php?id=<?= $value['id_sortie_immo'] ?>"
-                    class="delete-btn"
-                    title="Supprimer"
-                    onclick="return confirm('Êtes-vous sûr de vouloir supprimer cette sortie d\'immobilisation ?');">
+                     class="delete-btn"
+                     title="Supprimer"
+                     onclick="return confirm('Êtes-vous sûr de vouloir supprimer cette sortie d\'immobilisation ?');">
                     <i class='bx bx-trash'></i>
                   </a>
                 </div>
               </td>
             </tr>
-        <?php
+          <?php
           }
         } else {
           ?>
-            <tr>
-              <td colspan="7" class="text-center">Aucune sortie d'immobilisation trouvée</td>
-            </tr>
-          <?php
-          }
-        
+          <tr>
+            <td colspan="5" class="text-center">Aucune sortie d'immobilisation trouvée</td>
+          </tr>
+        <?php
+        }
         ?>
+        </tbody>
       </table>
     </div>
   </div>
 </div>
 
 <script>
-  document.addEventListener('DOMContentLoaded', function() {
-    const immobilisationSelect = document.getElementById('immobilisation');
-    const quantiteInput = document.getElementById('quantite_sortie_immo');
-    const prixInput = document.getElementById('prix_unitaire_immo');
-    const valeurInput = document.getElementById('valeur_sortie_immo');
+function updateImmoDetails() {
+  const select = document.getElementById('immobilisation');
+  const nomImmoField = document.getElementById('nom_immo');
+  
+  if (select.value) {
+    const selectedOption = select.options[select.selectedIndex];
+    const nomImmo = selectedOption.getAttribute('data-nom');
+    nomImmoField.value = nomImmo;
+  } else {
+    nomImmoField.value = '';
+  }
+}
 
-    // Function to get average price via AJAX
-    function getAveragePriceImmo(immoId) {
-      fetch(`../traitement_immo/get_average_price_immo.php?id_immo=${immoId}`)
-        .then(response => response.json())
-        .then(data => {
-          prixInput.value = parseFloat(data.average_price).toFixed(2);
-          calculateTotal();
-        })
-        .catch(error => console.error('Error:', error));
-    }
-
-    function calculateTotal() {
-      const quantite = parseFloat(quantiteInput.value) || 0;
-      const prix = parseFloat(prixInput.value) || 0;
-      valeurInput.value = (quantite * prix).toFixed(2);
-    }
-
-    // Event listeners
-    immobilisationSelect.addEventListener('change', function() {
-      const selectedImmoId = this.value;
-      if (selectedImmoId) {
-        getAveragePriceImmo(selectedImmoId);
-      }
-    });
-
-    quantiteInput.addEventListener('input', calculateTotal);
-
-    // Calculate initial values if editing
-    if (immobilisationSelect.value) {
-      getAveragePriceImmo(immobilisationSelect.value);
-    }
-    calculateTotal();
-  });
+// Initialize on page load
+document.addEventListener('DOMContentLoaded', function() {
+  updateImmoDetails();
+});
 </script>
 
 <?php

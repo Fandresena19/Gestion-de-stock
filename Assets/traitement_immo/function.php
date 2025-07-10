@@ -1,5 +1,6 @@
 <?php
 include('db.php');
+
 function getAllCategories()
 {
   $sql = "SELECT * FROM categorie_immo";
@@ -61,7 +62,7 @@ function getImmobilisation($id = null, $searchParams = [])
     $sql = "SELECT i.*, c.*
         FROM immobilisation i 
         JOIN categorie_immo c ON i.id_categorie_immo = c.id_categorie_immo 
-        WHERE id_immo = ?";
+        WHERE i.id_immo = ?";
 
     $req = $GLOBALS['bdd']->prepare($sql);
     $req->execute([$id]);
@@ -86,10 +87,18 @@ function getImmobilisation($id = null, $searchParams = [])
       $params[] = $searchParams['id_categorie_immo'];
     }
     
+    // Add type_immo filter
+    if (!empty($searchParams['type_immo'])) {
+      $conditions[] = "i.type_immo = ?";
+      $params[] = $searchParams['type_immo'];
+    }
+    
     // Add WHERE clause if there are conditions
     if (!empty($conditions)) {
       $sql .= " WHERE " . implode(" AND ", $conditions);
     }
+    
+    $sql .= " ORDER BY i.nom_immo ASC";
 
     $req = $GLOBALS['bdd']->prepare($sql);
     $req->execute($params);
@@ -110,10 +119,10 @@ function getAllCategoriesImmo()
 
 function getSortieImmo($id=null){
   if(!empty($id)){
-      $sql = "SELECT s.*, i.nom_immo
+      $sql = "SELECT s.*, s.nom_immo
               FROM sortie_immo s 
-              JOIN immobilisation i ON s.id_immo = i.id_immo 
-              WHERE s.id_sortie_immo = ? ORDER BY s.date_sortie_immo ASC";
+              WHERE s.id_sortie_immo = ? 
+              ORDER BY s.date_sortie_immo ASC";
       
       $req = $GLOBALS['bdd'] -> prepare($sql);
       $req->execute([$id]);
@@ -121,9 +130,8 @@ function getSortieImmo($id=null){
       return $req->fetch(PDO::FETCH_ASSOC);
   
   }else{
-      $sql = "SELECT s.*, i.nom_immo
-              FROM sortie_immo s 
-              JOIN immobilisation i ON s.id_immo = i.id_immo
+      $sql = "SELECT s.*, s.nom_immo
+              FROM sortie_immo s
               ORDER BY s.date_sortie_immo DESC";
       
       $req = $GLOBALS['bdd'] -> prepare($sql);
@@ -136,9 +144,10 @@ function getSortieImmo($id=null){
 function getAchatImmo($id = null)
 {
   if(!empty($id)){
-      $sql = "SELECT a.*, i.*, f.*
+      $sql = "SELECT a.*, i.*, c.nom_categorie_immo, f.nom_fournisseur
               FROM achat_immo a 
               JOIN immobilisation i ON a.id_immo = i.id_immo 
+              JOIN categorie_immo c ON i.id_categorie_immo = c.id_categorie_immo
               JOIN fournisseur f ON a.id_fournisseur = f.id_fournisseur
               WHERE a.id_achat_immo = ? 
               ORDER BY a.date_achat_immo ASC";
@@ -149,9 +158,10 @@ function getAchatImmo($id = null)
       return $req->fetch(PDO::FETCH_ASSOC);
   
   } else {
-      $sql = "SELECT a.*, i.*, f.*
+      $sql = "SELECT a.*, i.*, c.nom_categorie_immo, f.nom_fournisseur
               FROM achat_immo a 
               JOIN immobilisation i ON a.id_immo = i.id_immo 
+              JOIN categorie_immo c ON i.id_categorie_immo = c.id_categorie_immo
               JOIN fournisseur f ON a.id_fournisseur = f.id_fournisseur
               ORDER BY a.date_achat_immo DESC";
       
@@ -162,49 +172,128 @@ function getAchatImmo($id = null)
   }
 }
 
-function getAveragePurchasePriceImmo($id_immo) {
-    $sql = "SELECT COALESCE(AVG(prix_unitaire_immo), 0) as avg_price 
-            FROM achat_immo 
-            WHERE id_immo = ?";
-            
-    $req = $GLOBALS['bdd']->prepare($sql);
-    $req->execute([$id_immo]);
-    
-    return $req->fetch(PDO::FETCH_ASSOC)['avg_price'];
+/**
+ * Fonction pour supprimer une immobilisation de l'inventaire
+ * @param int $id_immo L'ID de l'immobilisation à supprimer
+ * @return bool True si la suppression a réussi, false sinon
+ */
+function supprimerImmobilisation($id_immo) 
+{
+    try {
+        $sql = "DELETE FROM immobilisation WHERE id_immo = ?";
+        $req = $GLOBALS['bdd']->prepare($sql);
+        return $req->execute([$id_immo]);
+    } catch (Exception $e) {
+        error_log("Erreur lors de la suppression de l'immobilisation : " . $e->getMessage());
+        return false;
+    }
 }
 
-function updateStockQuantitiesImmo() 
+/**
+ * Fonction pour vérifier si une immobilisation existe
+ * @param int $id_immo L'ID de l'immobilisation à vérifier
+ * @return bool True si l'immobilisation existe, false sinon
+ */
+function immobilisationExiste($id_immo)
 {
-    // 1. Récupérer toutes les immobilisations
-    $immobilisations = getImmobilisation();
-    
-    if (!empty($immobilisations) && is_array($immobilisations)) {
-        foreach ($immobilisations as $immobilisation) {
-            $id_immo = $immobilisation['id_immo'];
-            
-            // 2. Calculer le total des achats pour cette immobilisation
-            $sql_achats = "SELECT COALESCE(SUM(quantite_achete_immo), 0) as total_achats 
-                          FROM achat_immo WHERE id_immo = ?";
-            $req_achats = $GLOBALS['bdd']->prepare($sql_achats);
-            $req_achats->execute([$id_immo]);
-            $total_achats = $req_achats->fetch(PDO::FETCH_ASSOC)['total_achats'] ?? 0;
-            
-            // 3. Calculer le total des sorties pour cette immobilisation
-            $sql_sorties = "SELECT COALESCE(SUM(quantite_sortie_immo), 0) as total_sorties 
-                           FROM sortie_immo WHERE id_immo = ?";
-            $req_sorties = $GLOBALS['bdd']->prepare($sql_sorties);
-            $req_sorties->execute([$id_immo]);
-            $total_sorties = $req_sorties->fetch(PDO::FETCH_ASSOC)['total_sorties'] ?? 0;
-            
-            // 4. Calculer la quantité en stock (achats - sorties)
-            $quantite_en_stock = $total_achats - $total_sorties;
-            
-            // 5. Mettre à jour la quantité en stock dans la table immobilisation
-            $sql_update = "UPDATE immobilisation SET quantite_en_stock_immo = ? WHERE id_immo = ?";
-            $req_update = $GLOBALS['bdd']->prepare($sql_update);
-            $req_update->execute([$quantite_en_stock, $id_immo]);
-        }
-        return true;
+    try {
+        $sql = "SELECT COUNT(*) FROM immobilisation WHERE id_immo = ?";
+        $req = $GLOBALS['bdd']->prepare($sql);
+        $req->execute([$id_immo]);
+        return $req->fetchColumn() > 0;
+    } catch (Exception $e) {
+        error_log("Erreur lors de la vérification de l'immobilisation : " . $e->getMessage());
+        return false;
     }
-    return false;
 }
+
+/**
+ * Fonction pour obtenir les informations d'une immobilisation par son ID
+ * @param int $id_immo L'ID de l'immobilisation
+ * @return array|false Les informations de l'immobilisation ou false si non trouvée
+ */
+function getImmobilisationById($id_immo)
+{
+    try {
+        $sql = "SELECT * FROM immobilisation WHERE id_immo = ?";
+        $req = $GLOBALS['bdd']->prepare($sql);
+        $req->execute([$id_immo]);
+        return $req->fetch(PDO::FETCH_ASSOC);
+    } catch (Exception $e) {
+        error_log("Erreur lors de la récupération de l'immobilisation : " . $e->getMessage());
+        return false;
+    }
+}
+
+/**
+ * Fonction pour supprimer un achat d'immobilisation et optionnellement l'immobilisation associée
+ * @param int $id_achat_immo L'ID de l'achat à supprimer
+ * @param bool $supprimer_immo Si true, supprime aussi l'immobilisation associée
+ * @return bool True si la suppression a réussi, false sinon
+ */
+function supprimerAchatImmo($id_achat_immo, $supprimer_immo = false)
+{
+    try {
+        $bdd = $GLOBALS['bdd'];
+        $bdd->beginTransaction();
+
+        // Récupérer l'ID de l'immobilisation avant de supprimer l'achat
+        $achat = getAchatImmo($id_achat_immo);
+        if (!$achat) {
+            throw new Exception("Achat d'immobilisation non trouvé.");
+        }
+        
+        $id_immo = $achat['id_immo'];
+
+        // Supprimer l'achat
+        $sql = "DELETE FROM achat_immo WHERE id_achat_immo = ?";
+        $req = $bdd->prepare($sql);
+        if (!$req->execute([$id_achat_immo])) {
+            throw new Exception("Erreur lors de la suppression de l'achat.");
+        }
+
+        // Supprimer l'immobilisation si demandé
+        if ($supprimer_immo) {
+            $sql_immo = "DELETE FROM immobilisation WHERE id_immo = ?";
+            $req_immo = $bdd->prepare($sql_immo);
+            if (!$req_immo->execute([$id_immo])) {
+                throw new Exception("Erreur lors de la suppression de l'immobilisation.");
+            }
+        }
+
+        $bdd->commit();
+        return true;
+    } catch (Exception $e) {
+        if ($bdd->inTransaction()) {
+            $bdd->rollback();
+        }
+        error_log("Erreur lors de la suppression de l'achat d'immobilisation : " . $e->getMessage());
+        return false;
+    }
+}
+
+/**
+ * Fonction pour obtenir toutes les immobilisations disponibles (non sorties)
+ * @return array Liste des immobilisations disponibles
+ */
+function getImmobilisationsDisponibles()
+{
+    try {
+        $sql = "SELECT i.*, c.nom_categorie_immo
+                FROM immobilisation i 
+                JOIN categorie_immo c ON i.id_categorie_immo = c.id_categorie_immo
+                WHERE i.id_immo NOT IN (
+                    SELECT DISTINCT id_immo FROM sortie_immo WHERE id_immo IS NOT NULL
+                )
+                ORDER BY i.nom_immo ASC";
+        
+        $req = $GLOBALS['bdd']->prepare($sql);
+        $req->execute();
+        
+        return $req->fetchAll(PDO::FETCH_ASSOC);
+    } catch (Exception $e) {
+        error_log("Erreur lors de la récupération des immobilisations disponibles : " . $e->getMessage());
+        return [];
+    }
+}
+?>
