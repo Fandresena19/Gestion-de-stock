@@ -145,7 +145,7 @@ function calculateLinearDepreciation($prix_unitaire, $duree_vie, $debut_service)
         <input type="text" id="new_type" name="new_type" placeholder="Ajouter un nouveau type" style="display:none;" 
                <?= empty($current_immobilisation) ? 'readonly' : '' ?> />
         
-        <label for="duree">Durée de vie (en années)</label>
+        <label for="duree_vie">Durée de vie (en années)</label>
         <input type="number" value="<?= !empty($current_immobilisation['duree_vie']) ? $current_immobilisation['duree_vie'] : '' ?>"
           name="duree_vie" id="duree_vie" placeholder="Saisir la durée de vie en années" 
           <?= empty($current_immobilisation) ? 'readonly' : '' ?> />
@@ -227,10 +227,10 @@ function calculateLinearDepreciation($prix_unitaire, $duree_vie, $debut_service)
               </select>
             </td>
             <td>
-              <button type="submit" class="btn btn-primary">
+              <button type="submit" class="btn btn-primary" style="width: auto; height: 30px;">
                 Rechercher
               </button>
-              <a href="immobilisation.php" class="btn btn-secondary">Réinitialiser</a>
+              <a href="immobilisation.php" class="btn btn-secondary" style="width: auto; height:30px;">Réinitialiser</a>
             </td>
           </tr>
         </table>
@@ -405,17 +405,19 @@ function calculateLinearDepreciation($prix_unitaire, $duree_vie, $debut_service)
   }
   
   .more-btn {
-    background-color: #17a2b8;
+    background-color: transparent;
     color: white;
     border: none;
-    padding: 5px 8px;
     border-radius: 3px;
     cursor: pointer;
-    margin-left: 5px;
+    width: 15px;
   }
-  
-  .more-btn:hover {
-    background-color: #138496;
+
+  .more-btn i {
+    font-size: 20px;
+    vertical-align: middle;
+    color: black;
+
   }
   
   .amortissement-row {
@@ -491,7 +493,8 @@ function calculateLinearDepreciation($prix_unitaire, $duree_vie, $debut_service)
   
   .action-buttons {
     display: flex;
-    gap: 5px;
+    flex-wrap: wrap;
+    gap: 2px !important;
   }
 </style>
 
