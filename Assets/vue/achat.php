@@ -45,24 +45,21 @@ $fournisseurs = getFournisseur();
                 </select>
 
                 <label for="fournisseur">Fournisseur</label>
-                <select name="fournisseur" id="fournisseur" required>
-                    <?php
-                    // If editing, show the current fournisseur as selected first
-                    if (!empty($current_achat['id_fournisseur'])) {
-                        echo '<option value="' . $current_achat['id_fournisseur'] . '" selected>' .
-                            htmlspecialchars($current_achat['nom_fournisseur']) . '</option>';
-                    }
-
-                    // Populate other fournisseurs
-                    foreach ($fournisseurs as $fournisseur) {
-                        // Skip the current fournisseur to avoid duplicate
-                        if (empty($current_achat) || $fournisseur['id_fournisseur'] != $current_achat['id_fournisseur']) {
-                            echo '<option value="' . $fournisseur['id_fournisseur'] . '">' .
+                <div class="fournisseur-select-container">
+                    <select name="fournisseur" id="fournisseur" required>
+                        <option value="">Choisir un fournisseur</option>
+                        <?php
+                        foreach ($fournisseurs as $fournisseur) {
+                            $selected = (!empty($current_achat_immo['id_fournisseur']) && $current_achat_immo['id_fournisseur'] == $fournisseur['id_fournisseur']) ? 'selected' : '';
+                            echo '<option value="' . $fournisseur['id_fournisseur'] . '" ' . $selected . '>' .
                                 htmlspecialchars($fournisseur['nom_fournisseur']) . '</option>';
                         }
-                    }
-                    ?>
-                </select>
+                        ?>
+                    </select>
+                    <button type="button" class="btn-add-fournisseur" id="openModalBtn">
+                        <i class='bx bx-plus'></i>
+                    </button>
+                </div>
 
                 <label for="quantite_acquis">Quantité acquise</label>
                 <input type="number"
@@ -164,6 +161,134 @@ $fournisseurs = getFournisseur();
         </div>
     </div>
 </div>
+
+<div id="addFournisseurModal" class="modal">
+    <div class="modal-content">
+        <span class="close-btn">&times;</span>
+        <h4>Ajouter un nouveau Fournisseur</h4>
+        <form action="../traitement/add_fournisseur.php" method="post" id="addFournisseurForm">
+            <label for="nom_fournisseur">Nom du Fournisseur</label>
+            <input type="text" name="nom_fournisseur" id="nom_fournisseur" required>
+            <button type="submit" class="btn btn-success">Enregistrer le Fournisseur</button>
+        </form>
+    </div>
+</div>
+
+<style>
+/* CSS for the modal */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgba(0,0,0,0.4);
+    padding-top: 60px;
+}
+
+.modal-content {
+    background-color: #fefefe;
+    margin: 5% auto;
+    padding: 20px;
+    border: 1px solid #888;
+    width: 80%;
+    max-width: 500px;
+    border-radius: 8px;
+    position: relative;
+}
+
+.close-btn {
+    color: #aaa;
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+}
+
+.close-btn:hover,
+.close-btn:focus {
+    color: black;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.fournisseur-select-container {
+    display: flex;
+    align-items: center;
+}
+
+.fournisseur-select-container select {
+    flex-grow: 1;
+    margin-right: 10px;
+}
+
+.btn-add-fournisseur {
+    background-color: #28a745;
+    color: white;
+    border: none;
+    padding: 8px 12px;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.btn-add-fournisseur:hover {
+    background-color: #218838;
+}
+
+.badge {
+    display: inline-block;
+    font-weight: bold;
+    text-align: center;
+    border-radius: 4px;
+    font-size: 10px;
+    padding: 2px 6px;
+}
+
+.badge-success {
+    color: green;
+    background-color: #d4edda;
+}
+
+.badge-danger {
+    color: red;
+    background-color: #f8d7da;
+}
+
+.alert-warning {
+    background-color: #fff3cd;
+    border: 1px solid #ffeaa7;
+    color: #856404;
+    padding: 10px;
+    border-radius: 4px;
+    margin: 10px 0;
+}
+</style>
+
+<script>
+    // Get the modal and buttons
+    var modal = document.getElementById("addFournisseurModal");
+    var openBtn = document.getElementById("openModalBtn");
+    var closeBtn = document.getElementsByClassName("close-btn")[0];
+
+    // When the user clicks the button, open the modal
+    openBtn.onclick = function() {
+        modal.style.display = "block";
+    }
+
+    // When the user clicks on <span> (x), close the modal
+    closeBtn.onclick = function() {
+        modal.style.display = "none";
+    }
+
+    // When the user clicks anywhere outside of the modal, close it
+    window.onclick = function(event) {
+        if (event.target == modal) {
+            modal.style.display = "none";
+        }
+    }
+</script>
 
 <script>
     document.addEventListener('DOMContentLoaded', function() {

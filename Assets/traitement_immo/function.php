@@ -59,7 +59,7 @@ function getFournisseur($id = null)
 function getImmobilisation($id = null, $searchParams = [])
 {
   if (!empty($id)) {
-    $sql = "SELECT i.*, c.*
+    $sql = "SELECT i.*, c.nom_categorie_immo
         FROM immobilisation i 
         JOIN categorie_immo c ON i.id_categorie_immo = c.id_categorie_immo 
         WHERE i.id_immo = ?";
@@ -69,7 +69,7 @@ function getImmobilisation($id = null, $searchParams = [])
 
     return $req->fetch(PDO::FETCH_ASSOC);
   } else {
-    $sql = "SELECT i.*, c.*
+    $sql = "SELECT i.*, c.nom_categorie_immo
         FROM immobilisation i 
         JOIN categorie_immo c ON i.id_categorie_immo = c.id_categorie_immo";
     
@@ -119,8 +119,14 @@ function getAllCategoriesImmo()
 
 function getSortieImmo($id=null){
   if(!empty($id)){
-      $sql = "SELECT s.*, s.nom_immo
-              FROM sortie_immo s 
+      $sql = "SELECT s.*, 
+              CASE 
+                WHEN i.nom_immo IS NOT NULL THEN i.nom_immo 
+                ELSE CONCAT('Immobilisation supprimée (ID: ', s.id_immo, ')')
+              END as nom_immo,
+              i.id_immo as immo_exists
+              FROM sortie_immo s
+              LEFT JOIN immobilisation i ON s.id_immo = i.id_immo
               WHERE s.id_sortie_immo = ? 
               ORDER BY s.date_sortie_immo ASC";
       
@@ -130,8 +136,14 @@ function getSortieImmo($id=null){
       return $req->fetch(PDO::FETCH_ASSOC);
   
   }else{
-      $sql = "SELECT s.*, s.nom_immo
+      $sql = "SELECT s.*, 
+              CASE 
+                WHEN i.nom_immo IS NOT NULL THEN i.nom_immo 
+                ELSE CONCAT('Immobilisation supprimée (ID: ', s.id_immo, ')')
+              END as nom_immo,
+              i.id_immo as immo_exists
               FROM sortie_immo s
+              LEFT JOIN immobilisation i ON s.id_immo = i.id_immo
               ORDER BY s.date_sortie_immo DESC";
       
       $req = $GLOBALS['bdd'] -> prepare($sql);
@@ -144,11 +156,28 @@ function getSortieImmo($id=null){
 function getAchatImmo($id = null)
 {
   if(!empty($id)){
-      $sql = "SELECT a.*, i.*, c.nom_categorie_immo, f.nom_fournisseur
+      $sql = "SELECT a.*, 
+              CASE 
+                WHEN i.nom_immo IS NOT NULL THEN i.nom_immo 
+                ELSE CONCAT('Immobilisation supprimée (ID: ', a.id_immo, ')')
+              END as nom_immo,
+              CASE 
+                WHEN i.type_immo IS NOT NULL THEN i.type_immo 
+                ELSE 'Type inconnu'
+              END as type_immo,
+              CASE 
+                WHEN c.nom_categorie_immo IS NOT NULL THEN c.nom_categorie_immo 
+                ELSE 'Catégorie inconnue'
+              END as nom_categorie_immo,
+              f.nom_fournisseur,
+              i.id_immo as immo_exists,
+              i.description_immo,
+              i.duree_vie,
+              i.debut_service
               FROM achat_immo a 
-              JOIN immobilisation i ON a.id_immo = i.id_immo 
-              JOIN categorie_immo c ON i.id_categorie_immo = c.id_categorie_immo
-              JOIN fournisseur f ON a.id_fournisseur = f.id_fournisseur
+              LEFT JOIN immobilisation i ON a.id_immo = i.id_immo 
+              LEFT JOIN categorie_immo c ON i.id_categorie_immo = c.id_categorie_immo
+              LEFT JOIN fournisseur f ON a.id_fournisseur = f.id_fournisseur
               WHERE a.id_achat_immo = ? 
               ORDER BY a.date_achat_immo ASC";
       
@@ -158,11 +187,25 @@ function getAchatImmo($id = null)
       return $req->fetch(PDO::FETCH_ASSOC);
   
   } else {
-      $sql = "SELECT a.*, i.*, c.nom_categorie_immo, f.nom_fournisseur
+      $sql = "SELECT a.*, 
+              CASE 
+                WHEN i.nom_immo IS NOT NULL THEN i.nom_immo 
+                ELSE CONCAT('Immobilisation supprimée (ID: ', a.id_immo, ')')
+              END as nom_immo,
+              CASE 
+                WHEN i.type_immo IS NOT NULL THEN i.type_immo 
+                ELSE 'Type inconnu'
+              END as type_immo,
+              CASE 
+                WHEN c.nom_categorie_immo IS NOT NULL THEN c.nom_categorie_immo 
+                ELSE 'Catégorie inconnue'
+              END as nom_categorie_immo,
+              f.nom_fournisseur,
+              i.id_immo as immo_exists
               FROM achat_immo a 
-              JOIN immobilisation i ON a.id_immo = i.id_immo 
-              JOIN categorie_immo c ON i.id_categorie_immo = c.id_categorie_immo
-              JOIN fournisseur f ON a.id_fournisseur = f.id_fournisseur
+              LEFT JOIN immobilisation i ON a.id_immo = i.id_immo 
+              LEFT JOIN categorie_immo c ON i.id_categorie_immo = c.id_categorie_immo
+              LEFT JOIN fournisseur f ON a.id_fournisseur = f.id_fournisseur
               ORDER BY a.date_achat_immo DESC";
       
       $req = $GLOBALS['bdd']->prepare($sql);
@@ -215,7 +258,10 @@ function immobilisationExiste($id_immo)
 function getImmobilisationById($id_immo)
 {
     try {
-        $sql = "SELECT * FROM immobilisation WHERE id_immo = ?";
+        $sql = "SELECT i.*, c.nom_categorie_immo 
+                FROM immobilisation i 
+                JOIN categorie_immo c ON i.id_categorie_immo = c.id_categorie_immo 
+                WHERE i.id_immo = ?";
         $req = $GLOBALS['bdd']->prepare($sql);
         $req->execute([$id_immo]);
         return $req->fetch(PDO::FETCH_ASSOC);
@@ -293,6 +339,32 @@ function getImmobilisationsDisponibles()
         return $req->fetchAll(PDO::FETCH_ASSOC);
     } catch (Exception $e) {
         error_log("Erreur lors de la récupération des immobilisations disponibles : " . $e->getMessage());
+        return [];
+    }
+}
+
+/**
+ * Fonction pour obtenir toutes les immobilisations disponibles pour les sorties
+ * Inclut seulement les immobilisations qui existent encore
+ * @return array Liste des immobilisations disponibles
+ */
+function getImmobilisationsForSortie()
+{
+    try {
+        $sql = "SELECT i.*, c.nom_categorie_immo
+                FROM immobilisation i 
+                JOIN categorie_immo c ON i.id_categorie_immo = c.id_categorie_immo
+                WHERE i.id_immo NOT IN (
+                    SELECT DISTINCT id_immo FROM sortie_immo WHERE id_immo IS NOT NULL
+                )
+                ORDER BY i.nom_immo ASC";
+        
+        $req = $GLOBALS['bdd']->prepare($sql);
+        $req->execute();
+        
+        return $req->fetchAll(PDO::FETCH_ASSOC);
+    } catch (Exception $e) {
+        error_log("Erreur lors de la récupération des immobilisations pour sortie : " . $e->getMessage());
         return [];
     }
 }

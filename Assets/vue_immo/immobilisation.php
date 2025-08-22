@@ -275,12 +275,6 @@ function calculateLinearDepreciation($prix_unitaire, $duree_vie, $debut_service)
                   <a href="immobilisation.php?id=<?= $value['id_immo'] ?>" class="edit-btn" title="Modifier">
                     <i class='bx bx-edit-alt'></i>
                   </a>
-                  <a href="../traitement/supprimer_immobilisation.php?id=<?= $value['id_immo'] ?>"
-                    class="delete-btn"
-                    title="Supprimer"
-                    onclick="return confirm('Êtes-vous sûr de vouloir supprimer cette immobilisation ?');">
-                    <i class='bx bx-trash'></i>
-                  </a>
                   
                   <!-- Bouton More pour l'amortissement -->
                   <button class="more-btn" title="Voir amortissement" onclick="toggleAmortissement(<?= $index ?>)">

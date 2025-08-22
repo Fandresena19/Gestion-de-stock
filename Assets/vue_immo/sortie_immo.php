@@ -60,7 +60,7 @@ $immobilisations = getImmobilisation();
         <input type="text"
                name="raison_sortie_immo"
                id="raison_sortie_immo"
-               placeholder="Raison précise de sortie"
+               placeholder="Raison sortie + (Nom immo)"
                value="<?= !empty($current_sortie_immo['raison_sortie_immo']) ? htmlspecialchars($current_sortie_immo['raison_sortie_immo']) : '' ?>"
                required />
 

@@ -18,6 +18,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $id_categorie = isset($_POST['id_categorie']) ? intval($_POST['id_categorie']) : null;
     $description = isset($_POST['description']) ? validateInput($_POST['description']) : null;
     $type_immo = isset($_POST['type_immo']) ? validateInput($_POST['type_immo']) : null;
+    $duree_vie = isset($_POST['duree_vie']) ? intval($_POST['duree_vie']) : null; // Variable manquante ajoutée
     $debut_service = isset($_POST['debut_service']) ? $_POST['debut_service'] : null;
     
     // Informations d'achat
@@ -41,7 +42,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (empty($type_immo)) {
         $errors[] = "Le type d'immobilisation est requis.";
     }
-
 
     // Validation des informations d'achat
     if (empty($id_fournisseur)) {
@@ -71,6 +71,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             $id_immo = null;
 
+            // Format date if not empty
+            if (!empty($debut_service)) {
+                $debut_service = date('Y-m-d', strtotime($debut_service));
+            } else {
+                $debut_service = null;
+            }
+
             if ($id_achat_immo) {
                 // Mode modification - récupérer l'ID de l'immobilisation existante
                 $achat_existant = getAchatImmo($id_achat_immo);
@@ -96,11 +103,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $stmt_immo->bindParam(':description', $description, PDO::PARAM_STR);
                 $stmt_immo->bindParam(':type_immo', $type_immo, PDO::PARAM_STR);
                 $stmt_immo->bindParam(':duree_vie', $duree_vie, PDO::PARAM_INT);
-                if(!empty($debut_service)) {
-                    $debut_service = date('Y-m-d', strtotime($debut_service)); // Format date
-                } else {
-                    $debut_service = null; // empty date
-                }
                 $stmt_immo->bindParam(':debut_service', $debut_service, PDO::PARAM_STR);
 
                 if (!$stmt_immo->execute()) {
@@ -130,7 +132,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             } else {
                 // Mode ajout - créer une nouvelle immobilisation
                 $sql_immo = "INSERT INTO immobilisation (nom_immo, id_categorie_immo, description_immo, type_immo, duree_vie, debut_service) 
-                            VALUES (:nom_immo, :id_categorie, :description, :type_immo, :debut_service)";
+                            VALUES (:nom_immo, :id_categorie, :description, :type_immo, :duree_vie, :debut_service)";
 
                 $stmt_immo = $bdd->prepare($sql_immo);
                 $stmt_immo->bindParam(':nom_immo', $nom_immo, PDO::PARAM_STR);
@@ -138,11 +140,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $stmt_immo->bindParam(':description', $description, PDO::PARAM_STR);
                 $stmt_immo->bindParam(':type_immo', $type_immo, PDO::PARAM_STR);
                 $stmt_immo->bindParam(':duree_vie', $duree_vie, PDO::PARAM_INT);
-                if(!empty($debut_service)) {
-                    $debut_service = date('Y-m-d', strtotime($debut_service)); // Format date
-                } else {
-                    $debut_service = null; // empty date
-                }
                 $stmt_immo->bindParam(':debut_service', $debut_service, PDO::PARAM_STR);
 
                 if (!$stmt_immo->execute()) {
