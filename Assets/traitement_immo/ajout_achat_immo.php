@@ -86,7 +86,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
                 $id_immo = $achat_existant['id_immo'];
 
-                // Mettre à jour l'immobilisation
+                // update immobilisation
                 $sql_immo = "UPDATE immobilisation 
                             SET nom_immo = :nom_immo,
                                 id_categorie_immo = :id_categorie,
