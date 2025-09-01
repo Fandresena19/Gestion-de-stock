@@ -171,7 +171,7 @@ function getAchatImmo($id = null)
               END as nom_categorie_immo,
               f.nom_fournisseur,
               i.id_immo as immo_exists,
-              i.description_immo,
+              i.description,
               i.duree_vie,
               i.debut_service
               FROM achat_immo a 
