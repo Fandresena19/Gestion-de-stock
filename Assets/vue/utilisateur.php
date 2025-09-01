@@ -38,7 +38,8 @@ try {
             $stmt->execute([$userId]);
             $result = $stmt->fetch(PDO::FETCH_ASSOC);
             
-            if ($currentPassword == $result['mot_de_passe']){
+            // CORRECTION: Utilisation de password_verify() au lieu de la comparaison directe
+            if (password_verify($currentPassword, $result['mot_de_passe'])) {
                 $updateFields = [];
                 $updateParams = [];
                 

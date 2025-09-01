@@ -38,7 +38,8 @@ try {
             $stmt->execute([$userId]);
             $result = $stmt->fetch(PDO::FETCH_ASSOC);
             
-            if ($currentPassword == $result['mot_de_passe']){
+            // CORRECTION: Utilisation de password_verify() au lieu de la comparaison directe
+            if (password_verify($currentPassword, $result['mot_de_passe'])) {
                 $updateFields = [];
                 $updateParams = [];
                 
@@ -111,7 +112,7 @@ try {
       <div class="profile-info">
         <div class="info-item">
           <span class="label">Nom d'utilisateur:</span>
-          <span class="value"><?php echo htmlspecialchars($user['nom_utilisateur'] ?? ''); ?></span>
+          <span class="value"><?php echo strtoupper($user['nom_utilisateur'] ?? ''); ?></span>
         </div>
       </div>
     </div>
